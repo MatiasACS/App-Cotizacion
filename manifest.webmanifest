@@ -1,0 +1,11 @@
+{
+  "name": "App Cotización",
+  "short_name": "Cotizador",
+  "description": "Cotizador local para trabajos de construcción y reparación.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f5f5f1",
+  "theme_color": "#1f3a34",
+  "lang": "es-CL"
+}
