@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#1f3a34">
+  <title>App Cotización</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="app-header">
+    <div>
+      <p class="eyebrow">Cotizador local</p>
+      <h1>App Cotización</h1>
+      <p id="catalogStatus" class="catalog-status">Cargando catálogo…</p>
+    </div>
+    <button id="installButton" class="secondary hidden" type="button">Instalar</button>
+  </header>
+
+  <main>
+    <section class="card no-print">
+      <h2>Datos del maestro</h2>
+      <div class="grid two">
+        <label>Nombre
+          <input id="workerName" autocomplete="name" placeholder="Nombre del maestro">
+        </label>
+        <label>Teléfono
+          <input id="workerPhone" inputmode="tel" autocomplete="tel" placeholder="+56 9…">
+        </label>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="quote-title">
+        <div>
+          <p class="eyebrow">Cotización</p>
+          <h2 id="quoteIdLabel">Nueva cotización</h2>
+        </div>
+        <span id="quoteDate"></span>
+      </div>
+
+      <div class="grid two">
+        <label>Cliente
+          <input id="clientName" placeholder="Nombre del cliente">
+        </label>
+        <label>Ubicación del trabajo
+          <input id="workLocation" placeholder="Comuna o dirección">
+        </label>
+      </div>
+
+      <label>Descripción del trabajo
+        <textarea id="workDescription" rows="3" placeholder="Ej.: reparar filtración y pintar muro"></textarea>
+      </label>
+    </section>
+
+    <section class="card no-print">
+      <h2>Agregar material del catálogo</h2>
+      <label>Buscar producto
+        <input id="productSearch" list="productOptions" placeholder="Escribe cemento, pintura…">
+        <datalist id="productOptions"></datalist>
+      </label>
+
+      <div class="grid quantity-row">
+        <label>Cantidad
+          <input id="catalogQuantity" type="number" min="0.01" step="0.01" value="1" inputmode="decimal">
+        </label>
+        <button id="addCatalogProduct" class="primary" type="button">Agregar material</button>
+      </div>
+
+      <details>
+        <summary>Agregar material o servicio manual</summary>
+        <div class="grid manual-grid">
+          <label>Nombre
+            <input id="manualName" placeholder="Material no encontrado">
+          </label>
+          <label>Precio unitario
+            <input id="manualPrice" type="number" min="0" step="1" inputmode="numeric">
+          </label>
+          <label>Cantidad
+            <input id="manualQuantity" type="number" min="0.01" step="0.01" value="1" inputmode="decimal">
+          </label>
+          <label>Unidad
+            <input id="manualUnit" value="unidad">
+          </label>
+        </div>
+        <button id="addManualProduct" class="secondary" type="button">Agregar manualmente</button>
+      </details>
+    </section>
+
+    <section class="card">
+      <h2>Materiales</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Detalle</th>
+              <th>Cant.</th>
+              <th>Precio</th>
+              <th>Subtotal</th>
+              <th class="no-print"></th>
+            </tr>
+          </thead>
+          <tbody id="itemsBody">
+            <tr id="emptyRow">
+              <td colspan="5" class="empty">Aún no hay materiales.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Costos del trabajo</h2>
+      <div class="grid two">
+        <label>Mano de obra
+          <input id="laborCost" type="number" min="0" step="1000" value="0" inputmode="numeric">
+        </label>
+        <label>Transporte u otros
+          <input id="transportCost" type="number" min="0" step="1000" value="0" inputmode="numeric">
+        </label>
+      </div>
+
+      <div class="totals">
+        <div><span>Materiales</span><strong id="materialsTotal">$0</strong></div>
+        <div><span>Mano de obra</span><strong id="laborTotal">$0</strong></div>
+        <div><span>Transporte u otros</span><strong id="transportTotal">$0</strong></div>
+        <div class="grand-total"><span>Total</span><strong id="grandTotal">$0</strong></div>
+      </div>
+    </section>
+
+    <section class="card source-card">
+      <h2>Fuente de precios</h2>
+      <p id="sourceSummary"></p>
+      <p class="fine-print">
+        Los precios son referenciales y deben confirmarse antes de comprar. La cotización guarda una copia de los precios utilizados.
+      </p>
+    </section>
+
+    <section class="actions no-print">
+      <button id="saveQuote" class="primary" type="button">Guardar cotización</button>
+      <button id="printQuote" class="secondary" type="button">Imprimir / PDF</button>
+      <button id="newQuote" class="ghost" type="button">Nueva</button>
+      <button id="updateCatalog" class="ghost" type="button">Actualizar precios</button>
+    </section>
+
+    <section class="card no-print">
+      <h2>Cotizaciones guardadas</h2>
+      <div id="quoteHistory" class="history"></div>
+    </section>
+
+    <section class="card no-print">
+      <h2>Respaldo</h2>
+      <div class="actions compact">
+        <button id="exportBackup" class="secondary" type="button">Exportar respaldo</button>
+        <label class="file-button">
+          Importar respaldo
+          <input id="importBackup" type="file" accept="application/json">
+        </label>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <a href="https://www.ferreteriacerda.cl/" target="_blank" rel="noreferrer">Ferretería Cerda</a>
+  </footer>
+
+  <script src="app.js" defer></script>
+</body>
+</html>

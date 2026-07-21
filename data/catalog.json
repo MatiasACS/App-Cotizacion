@@ -1,0 +1,86 @@
+{
+  "dataset_id": "app-cotizacion-ferreteria-cerda",
+  "version": "demo-2026.07.21.1",
+  "generated_at": "2026-07-21T18:00:00-04:00",
+  "is_mock": true,
+  "notice": "Catálogo demostrativo. Los nombres y precios deben reemplazarse por datos autorizados y verificados.",
+  "source": {
+    "source_id": "ferreteria-cerda-cl",
+    "name": "Ferretería Cerda",
+    "website": "https://www.ferreteriacerda.cl/",
+    "currency": "CLP",
+    "country": "CL",
+    "contact": {
+      "phone": "",
+      "email": "",
+      "whatsapp": ""
+    },
+    "location": {
+      "address": "",
+      "commune": "",
+      "region": ""
+    }
+  },
+  "products": [
+    {
+      "product_id": "demo-001",
+      "sku": "DEMO-001",
+      "name": "Cemento 25 kg (demostrativo)",
+      "category": "Construcción",
+      "unit": "saco",
+      "price_clp": 4990,
+      "source_url": "https://www.ferreteriacerda.cl/",
+      "observed_at": "2026-07-21T18:00:00-04:00"
+    },
+    {
+      "product_id": "demo-002",
+      "sku": "DEMO-002",
+      "name": "Arena gruesa (demostrativo)",
+      "category": "Áridos",
+      "unit": "unidad",
+      "price_clp": 3500,
+      "source_url": "https://www.ferreteriacerda.cl/",
+      "observed_at": "2026-07-21T18:00:00-04:00"
+    },
+    {
+      "product_id": "demo-003",
+      "sku": "DEMO-003",
+      "name": "Pintura interior 1 galón (demostrativo)",
+      "category": "Pinturas",
+      "unit": "galón",
+      "price_clp": 18990,
+      "source_url": "https://www.ferreteriacerda.cl/",
+      "observed_at": "2026-07-21T18:00:00-04:00"
+    },
+    {
+      "product_id": "demo-004",
+      "sku": "DEMO-004",
+      "name": "Rodillo para pintura (demostrativo)",
+      "category": "Pinturas",
+      "unit": "unidad",
+      "price_clp": 4990,
+      "source_url": "https://www.ferreteriacerda.cl/",
+      "observed_at": "2026-07-21T18:00:00-04:00"
+    },
+    {
+      "product_id": "demo-005",
+      "sku": "DEMO-005",
+      "name": "Silicona sellante (demostrativo)",
+      "category": "Sellantes",
+      "unit": "unidad",
+      "price_clp": 3990,
+      "source_url": "https://www.ferreteriacerda.cl/",
+      "observed_at": "2026-07-21T18:00:00-04:00"
+    },
+    {
+      "product_id": "demo-006",
+      "sku": "DEMO-006",
+      "name": "Tornillos caja 100 unidades (demostrativo)",
+      "category": "Fijaciones",
+      "unit": "caja",
+      "price_clp": 5990,
+      "source_url": "https://www.ferreteriacerda.cl/",
+      "observed_at": "2026-07-21T18:00:00-04:00"
+    }
+  ]
+}
