@@ -6,6 +6,7 @@ const STORAGE = {
 
 const state = {
   catalog: null,
+  activeCatalogSnapshot: null,
   items: [],
   currentQuoteId: null,
   installPrompt: null
@@ -57,25 +58,22 @@ async function fetchCatalog(force = false) {
       alert("Sin conexión. Se mantiene el catálogo guardado.");
     } else {
       $("catalogStatus").textContent = "Catálogo no disponible";
+      renderSourceSummary();
       alert("No fue posible cargar el catálogo.");
     }
   }
 }
 
 function renderCatalog() {
-  if (!state.catalog) return;
+  if (!state.catalog) {
+    renderSourceSummary();
+    return;
+  }
 
   const source = state.catalog.source;
   $("catalogStatus").textContent =
     `${source.name} · versión ${state.catalog.version}${state.catalog.is_mock ? " · DEMO" : ""}`;
-
-  $("sourceSummary").innerHTML = `
-    <strong>${escapeHtml(source.name)}</strong><br>
-    Versión: ${escapeHtml(state.catalog.version)}<br>
-    Generado: ${new Date(state.catalog.generated_at).toLocaleString("es-CL")}<br>
-    Sitio: <a href="${escapeAttribute(source.website)}" target="_blank" rel="noreferrer">${escapeHtml(source.website)}</a>
-    ${state.catalog.is_mock ? "<br><strong>Advertencia:</strong> catálogo demostrativo, no usar como precio vigente." : ""}
-  `;
+  renderSourceSummary();
 
   const options = $("productOptions");
   options.innerHTML = "";
@@ -85,6 +83,47 @@ function renderCatalog() {
     option.dataset.productId = product.product_id;
     options.appendChild(option);
   });
+}
+
+function createCatalogSnapshot(catalog) {
+  if (!catalog) return null;
+
+  return {
+    dataset_id: catalog.dataset_id,
+    version: catalog.version,
+    generated_at: catalog.generated_at,
+    source: structuredClone(catalog.source),
+    is_mock: catalog.is_mock === true
+  };
+}
+
+function renderSourceSummary() {
+  const isHistoricalQuote = Boolean(state.currentQuoteId);
+  const snapshot = state.activeCatalogSnapshot ||
+    (isHistoricalQuote ? null : state.catalog);
+
+  if (!snapshot || !snapshot.source) {
+    $("sourceSummary").textContent = isHistoricalQuote
+      ? "Fuente histórica no registrada. Los metadatos disponibles se conservan en cada material."
+      : "Fuente de precios no disponible.";
+    return;
+  }
+
+  const source = snapshot.source;
+  const generated = snapshot.generated_at
+    ? `<br>Generado: ${new Date(snapshot.generated_at).toLocaleString("es-CL")}`
+    : "";
+  const website = source.website
+    ? `<br>Sitio: <a href="${escapeAttribute(source.website)}" target="_blank" rel="noreferrer">${escapeHtml(source.website)}</a>`
+    : "";
+
+  $("sourceSummary").innerHTML = `
+    <strong>${escapeHtml(source.name)}</strong><br>
+    Versión: ${escapeHtml(snapshot.version)}
+    ${generated}
+    ${website}
+    ${snapshot.is_mock ? "<br><strong>Advertencia:</strong> catálogo demostrativo, no usar como precio vigente." : ""}
+  `;
 }
 
 function findSelectedProduct() {
@@ -231,6 +270,11 @@ function updateTotals() {
 function collectQuote() {
   const id = state.currentQuoteId || makeQuoteId();
   const result = totals();
+  const catalogSnapshot = state.activeCatalogSnapshot
+    ? structuredClone(state.activeCatalogSnapshot)
+    : state.currentQuoteId
+      ? null
+      : createCatalogSnapshot(state.catalog);
 
   return {
     quote_id: id,
@@ -246,14 +290,7 @@ function collectQuote() {
     work_description: $("workDescription").value.trim(),
     items: structuredClone(state.items),
     costs: result,
-    catalog_snapshot: state.catalog
-      ? {
-          dataset_id: state.catalog.dataset_id,
-          version: state.catalog.version,
-          generated_at: state.catalog.generated_at,
-          source: structuredClone(state.catalog.source)
-        }
-      : null
+    catalog_snapshot: catalogSnapshot
   };
 }
 
@@ -280,7 +317,11 @@ function saveQuote() {
   );
 
   state.currentQuoteId = quote.quote_id;
+  state.activeCatalogSnapshot = quote.catalog_snapshot
+    ? structuredClone(quote.catalog_snapshot)
+    : null;
   $("quoteIdLabel").textContent = quote.quote_id;
+  renderSourceSummary();
   renderHistory();
   alert("Cotización guardada en este dispositivo.");
 }
@@ -334,6 +375,9 @@ function loadQuote(id) {
   if (!quote) return;
 
   state.currentQuoteId = quote.quote_id;
+  state.activeCatalogSnapshot = quote.catalog_snapshot
+    ? structuredClone(quote.catalog_snapshot)
+    : null;
   state.items = structuredClone(quote.items);
   $("quoteIdLabel").textContent = quote.quote_id;
   $("quoteDate").textContent = new Date(quote.created_at).toLocaleDateString("es-CL");
@@ -345,6 +389,7 @@ function loadQuote(id) {
   $("laborCost").value = quote.costs.labor || 0;
   $("transportCost").value = quote.costs.transport || 0;
   renderItems();
+  renderSourceSummary();
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
@@ -357,6 +402,7 @@ function deleteQuote(id) {
 
 function newQuote() {
   state.currentQuoteId = null;
+  state.activeCatalogSnapshot = null;
   state.items = [];
   $("quoteIdLabel").textContent = "Nueva cotización";
   $("quoteDate").textContent = new Date().toLocaleDateString("es-CL");
@@ -366,6 +412,7 @@ function newQuote() {
   $("laborCost").value = "0";
   $("transportCost").value = "0";
   renderItems();
+  renderSourceSummary();
 }
 
 function exportBackup() {
