@@ -51,13 +51,31 @@ http://localhost:8080
 
 ## Publicar en GitHub Pages
 
+La URL esperada de la aplicación es:
+
+```text
+https://matiasacs.github.io/App-Cotizacion/
+```
+
+La URL sólo estará disponible después de habilitar GitHub Pages y completar el primer despliegue.
+
 1. Mantener los archivos de la aplicación en la rama `main`.
 2. Abrir **Settings → Pages**.
 3. En **Build and deployment**, seleccionar **Deploy from a branch**.
 4. Elegir la rama `main` y la carpeta `/(root)`.
 5. Guardar y esperar el primer despliegue.
 
-Antes de habilitar Pages se recomienda ejecutar el Prompt 1 de `docs/CODEX_PROMPTS.md`, que verifica rutas relativas, alcance de la PWA y agrega `.nojekyll`.
+No se requiere GitHub Actions ni un proceso de compilación. El archivo `.nojekyll` permite que GitHub Pages publique los archivos estáticos directamente desde la raíz.
+
+## Probar desde un teléfono
+
+Después de habilitar Pages:
+
+1. Abrir `https://matiasacs.github.io/App-Cotizacion/` desde el navegador del teléfono.
+2. Crear y guardar una cotización de prueba marcada claramente como demostrativa.
+3. Recargar la página y confirmar que la cotización continúa en el historial.
+4. Tras una primera carga completa, desactivar temporalmente la conexión y comprobar que la aplicación vuelve a abrir y permite consultar la cotización.
+5. Probar **Imprimir / PDF** y, si el navegador lo ofrece, instalar la aplicación en la pantalla de inicio.
 
 ## Desarrollo con Codex
 
