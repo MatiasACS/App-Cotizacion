@@ -12,6 +12,9 @@ const state = {
   installPrompt: null
 };
 
+const generatedQuoteIds = new Set();
+let fallbackQuoteIdCounter = Date.now() >>> 0;
+
 const $ = (id) => document.getElementById(id);
 const money = new Intl.NumberFormat("es-CL", {
   style: "currency",
@@ -26,7 +29,30 @@ function numberValue(id) {
 function makeQuoteId() {
   const now = new Date();
   const pad = (value) => String(value).padStart(2, "0");
-  return `COT-${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}`;
+  const prefix = `COT-${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+  const existingIds = new Set(getQuotes().map((quote) => quote.quote_id));
+  let id;
+
+  do {
+    id = `${prefix}-${makeQuoteIdSuffix()}`;
+  } while (generatedQuoteIds.has(id) || existingIds.has(id));
+
+  generatedQuoteIds.add(id);
+  return id;
+}
+
+function makeQuoteIdSuffix() {
+  if (globalThis.crypto?.randomUUID) {
+    return globalThis.crypto.randomUUID().replaceAll("-", "").slice(0, 8).toUpperCase();
+  }
+
+  if (globalThis.crypto?.getRandomValues) {
+    const [value] = globalThis.crypto.getRandomValues(new Uint32Array(1));
+    return value.toString(16).padStart(8, "0").toUpperCase();
+  }
+
+  fallbackQuoteIdCounter = (fallbackQuoteIdCounter + 1) >>> 0;
+  return fallbackQuoteIdCounter.toString(16).padStart(8, "0").toUpperCase();
 }
 
 async function fetchCatalog(force = false) {
