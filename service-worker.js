@@ -1,10 +1,11 @@
-const CACHE_NAME = "app-cotizacion-v1";
+const CACHE_NAME = "clinica-hogar-v2";
 const APP_SHELL = [
   "./",
   "./index.html",
   "./styles.css",
   "./app.js",
   "./manifest.webmanifest",
+  "./assets/nat-symbol.svg",
   "./data/catalog.json"
 ];
 

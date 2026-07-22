@@ -3,17 +3,28 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#1f3a34">
-  <title>App Cotización</title>
+  <meta name="theme-color" content="#0d0c0a">
+  <title>Clínica Hogar</title>
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
   <header class="app-header">
-    <div>
-      <p class="eyebrow">Cotizador local</p>
-      <h1>App Cotización</h1>
-      <p id="catalogStatus" class="catalog-status">Cargando catálogo…</p>
+    <div class="brand-lockup">
+      <div class="brand-symbol-frame" aria-hidden="true">
+        <svg class="brand-symbol" viewBox="14 4 152 184" focusable="false">
+          <use href="assets/nat-symbol.svg#symbol"></use>
+        </svg>
+      </div>
+      <div>
+        <p class="brand-label">NAT</p>
+        <h1>Clínica Hogar</h1>
+        <p class="brand-subtitle">
+          Aplicación para cotizar trabajos de construcción. Desarrollada por
+          <a href="https://github.com/MatiasACS" target="_blank" rel="noreferrer">@MatiasACS</a>.
+        </p>
+        <p id="catalogStatus" class="catalog-status">Cargando catálogo…</p>
+      </div>
     </div>
     <button id="installButton" class="secondary hidden" type="button">Instalar</button>
   </header>
@@ -40,18 +51,44 @@
         <span id="quoteDate"></span>
       </div>
 
-      <div class="grid two">
-        <label>Cliente
-          <input id="clientName" placeholder="Nombre del cliente">
+      <div class="screen-only">
+        <label for="clientToken">Cliente anónimo</label>
+        <div class="grid token-row">
+          <input id="clientToken" class="technical" maxlength="10" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-describedby="clientTokenHint">
+          <button id="generateClientToken" class="secondary" type="button">Generar otro token</button>
+        </div>
+        <p id="clientTokenHint" class="form-hint">Formato: CLI-XXXXXX. No identifica a una persona.</p>
+
+        <label for="workType">Tipo de trabajo</label>
+        <select id="workType" required aria-describedby="workTypeHint">
+          <option value="">Selecciona un tipo de trabajo</option>
+          <option>Pintura y terminaciones</option>
+          <option>Gasfitería y agua</option>
+          <option>Electricidad</option>
+          <option>Albañilería y hormigón</option>
+          <option>Muros, cielos y tabiquería</option>
+          <option>Pisos y revestimientos</option>
+          <option>Carpintería y muebles</option>
+          <option>Puertas, ventanas y cerraduras</option>
+          <option>Techumbre, filtraciones e impermeabilización</option>
+          <option>Montaje, fijaciones e instalaciones</option>
+          <option>Mantención y reparaciones generales</option>
+          <option>Otro</option>
+        </select>
+        <p id="workTypeHint" class="form-hint">Selecciona la categoría que mejor represente el trabajo.</p>
+
+        <label for="workDetails">
+          Descripción adicional <span id="workDetailsRequirement">— opcional</span>
         </label>
-        <label>Ubicación del trabajo
-          <input id="workLocation" placeholder="Comuna o dirección">
-        </label>
+        <textarea id="workDetails" rows="3" placeholder="Ej.: reparar muro dañado y pintar sector afectado." aria-describedby="workDetailsHint"></textarea>
+        <p id="workDetailsHint" class="form-hint" aria-live="polite">Opcional, salvo cuando el tipo de trabajo sea Otro.</p>
       </div>
 
-      <label>Descripción del trabajo
-        <textarea id="workDescription" rows="3" placeholder="Ej.: reparar filtración y pintar muro"></textarea>
-      </label>
+      <dl class="print-only quote-metadata">
+        <div><dt>Cliente anónimo</dt><dd id="printClientToken"></dd></div>
+        <div><dt>Tipo de trabajo</dt><dd id="printWorkType"></dd></div>
+        <div><dt>Descripción adicional</dt><dd id="printWorkDetails"></dd></div>
+      </dl>
     </section>
 
     <section class="card no-print">

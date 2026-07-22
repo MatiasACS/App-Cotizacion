@@ -14,6 +14,9 @@ const state = {
 
 const generatedQuoteIds = new Set();
 let fallbackQuoteIdCounter = Date.now() >>> 0;
+const generatedClientTokens = new Set();
+let fallbackClientTokenCounter = Date.now() & 0xffffff;
+const CLIENT_TOKEN_PATTERN = /^CLI-[A-F0-9]{6}$/;
 
 const $ = (id) => document.getElementById(id);
 const money = new Intl.NumberFormat("es-CL", {
@@ -53,6 +56,44 @@ function makeQuoteIdSuffix() {
 
   fallbackQuoteIdCounter = (fallbackQuoteIdCounter + 1) >>> 0;
   return fallbackQuoteIdCounter.toString(16).padStart(8, "0").toUpperCase();
+}
+
+function normalizeClientToken(value) {
+  return String(value || "").trim().toUpperCase();
+}
+
+function makeClientToken(reservedTokens = new Set()) {
+  const storedTokens = new Set(
+    getQuotes()
+      .map((quote) => normalizeClientToken(quote?.client_token))
+      .filter((token) => CLIENT_TOKEN_PATTERN.test(token))
+  );
+  let token;
+
+  do {
+    token = `CLI-${makeClientTokenSuffix()}`;
+  } while (
+    generatedClientTokens.has(token) ||
+    storedTokens.has(token) ||
+    reservedTokens.has(token)
+  );
+
+  generatedClientTokens.add(token);
+  return token;
+}
+
+function makeClientTokenSuffix() {
+  if (globalThis.crypto?.randomUUID) {
+    return globalThis.crypto.randomUUID().replaceAll("-", "").slice(0, 6).toUpperCase();
+  }
+
+  if (globalThis.crypto?.getRandomValues) {
+    const [value] = globalThis.crypto.getRandomValues(new Uint32Array(1));
+    return (value & 0xffffff).toString(16).padStart(6, "0").toUpperCase();
+  }
+
+  fallbackClientTokenCounter = (fallbackClientTokenCounter + 1) & 0xffffff;
+  return fallbackClientTokenCounter.toString(16).padStart(6, "0").toUpperCase();
 }
 
 async function fetchCatalog(force = false) {
@@ -293,6 +334,59 @@ function updateTotals() {
   $("grandTotal").textContent = money.format(result.total);
 }
 
+function validateClientTokenField() {
+  const field = $("clientToken");
+  const token = normalizeClientToken(field.value);
+  const isValid = CLIENT_TOKEN_PATTERN.test(token);
+  field.value = token;
+  field.setCustomValidity(isValid ? "" : "Usa un token con formato CLI-XXXXXX.");
+  field.setAttribute("aria-invalid", String(!isValid));
+  updatePrintSummary();
+  return isValid;
+}
+
+function updateWorkDetailsRequirement() {
+  const isOther = $("workType").value === "Otro";
+  const details = $("workDetails");
+  details.required = isOther;
+  $("workDetailsRequirement").textContent = isOther
+    ? "— obligatorio para Otro"
+    : "— opcional";
+  $("workDetailsHint").textContent = isOther
+    ? "Describe el trabajo cuando seleccionas Otro."
+    : "La descripción adicional es opcional.";
+  details.setCustomValidity(isOther && !details.value.trim()
+    ? "Describe el trabajo cuando el tipo sea Otro."
+    : "");
+  details.setAttribute(
+    "aria-invalid",
+    String(Boolean(isOther && !details.value.trim()))
+  );
+  updatePrintSummary();
+}
+
+function updatePrintSummary() {
+  $("printClientToken").textContent = normalizeClientToken($("clientToken").value) || "No disponible";
+  $("printWorkType").textContent = $("workType").value || "No especificado";
+  $("printWorkDetails").textContent = $("workDetails").value.trim() || "Sin descripción adicional";
+}
+
+function validateQuoteDetails() {
+  const clientIsValid = validateClientTokenField();
+  const workType = $("workType");
+  const hasWorkType = Boolean(workType.value);
+  workType.setCustomValidity(hasWorkType ? "" : "Selecciona un tipo de trabajo.");
+  workType.setAttribute("aria-invalid", String(!hasWorkType));
+  updateWorkDetailsRequirement();
+  const detailsAreValid = workType.value !== "Otro" || Boolean($("workDetails").value.trim());
+
+  if (!clientIsValid) $("clientToken").reportValidity();
+  else if (!hasWorkType) workType.reportValidity();
+  else if (!detailsAreValid) $("workDetails").reportValidity();
+
+  return clientIsValid && hasWorkType && detailsAreValid;
+}
+
 function collectQuote() {
   const id = state.currentQuoteId || makeQuoteId();
   const result = totals();
@@ -309,11 +403,9 @@ function collectQuote() {
       name: $("workerName").value.trim(),
       phone: $("workerPhone").value.trim()
     },
-    client: {
-      name: $("clientName").value.trim(),
-      location: $("workLocation").value.trim()
-    },
-    work_description: $("workDescription").value.trim(),
+    client_token: normalizeClientToken($("clientToken").value),
+    work_type: $("workType").value,
+    work_details: $("workDetails").value.trim(),
     items: structuredClone(state.items),
     costs: result,
     catalog_snapshot: catalogSnapshot
@@ -321,6 +413,8 @@ function collectQuote() {
 }
 
 function saveQuote() {
+  if (!validateQuoteDetails()) return;
+
   if (!state.items.length && totals().total === 0) {
     alert("Agrega al menos un material o un costo.");
     return;
@@ -354,9 +448,66 @@ function saveQuote() {
 
 function getQuotes() {
   try {
-    return JSON.parse(localStorage.getItem(STORAGE.quotes)) || [];
+    const quotes = JSON.parse(localStorage.getItem(STORAGE.quotes));
+    return Array.isArray(quotes) ? quotes : [];
   } catch {
     return [];
+  }
+}
+
+function sanitizeQuotes(quotes) {
+  const reservedTokens = new Set(
+    quotes
+      .map((quote) => normalizeClientToken(quote?.client_token))
+      .filter((token) => CLIENT_TOKEN_PATTERN.test(token))
+  );
+  let changed = false;
+
+  quotes.forEach((quote) => {
+    if (!quote || typeof quote !== "object") return;
+
+    if (quote.client && typeof quote.client === "object") {
+      if (Object.hasOwn(quote.client, "name")) {
+        delete quote.client.name;
+        changed = true;
+      }
+      if (Object.hasOwn(quote.client, "location")) {
+        delete quote.client.location;
+        changed = true;
+      }
+      if (!Object.keys(quote.client).length) {
+        delete quote.client;
+        changed = true;
+      }
+    }
+
+    const normalizedToken = normalizeClientToken(quote.client_token);
+    if (!CLIENT_TOKEN_PATTERN.test(normalizedToken)) {
+      quote.client_token = makeClientToken(reservedTokens);
+      reservedTokens.add(quote.client_token);
+      changed = true;
+    } else if (quote.client_token !== normalizedToken) {
+      quote.client_token = normalizedToken;
+      changed = true;
+    }
+  });
+
+  return { quotes, changed };
+}
+
+function sanitizeStoredQuotes() {
+  const stored = localStorage.getItem(STORAGE.quotes);
+  if (!stored) return;
+
+  try {
+    const quotes = JSON.parse(stored);
+    if (!Array.isArray(quotes)) return;
+    const result = sanitizeQuotes(quotes);
+    if (result.changed) {
+      localStorage.setItem(STORAGE.quotes, JSON.stringify(result.quotes));
+    }
+  } catch {
+    // Un almacenamiento dañado se deja intacto para evitar pérdida adicional.
   }
 }
 
@@ -371,13 +522,15 @@ function renderHistory() {
   }
 
   quotes.forEach((quote) => {
+    if (!quote || typeof quote !== "object") return;
+
     const item = document.createElement("article");
     item.className = "history-item";
     item.innerHTML = `
       <div>
-        <strong>${escapeHtml(quote.quote_id)}</strong>
-        <p>${escapeHtml(quote.client.name || "Cliente sin nombre")}</p>
-        <p class="fine-print">${new Date(quote.created_at).toLocaleString("es-CL")} · ${money.format(quote.costs.total)}</p>
+        <strong>${escapeHtml(quote?.quote_id || "Cotización sin ID")}</strong>
+        <p>${escapeHtml(quote?.client_token || "Cliente anónimo")}</p>
+        <p class="fine-print">${formatStoredDate(quote?.created_at)} · ${money.format(quote?.costs?.total || 0)}</p>
       </div>
       <div class="history-actions">
         <button class="secondary load-quote" type="button" data-id="${escapeAttribute(quote.quote_id)}">Abrir</button>
@@ -404,16 +557,18 @@ function loadQuote(id) {
   state.activeCatalogSnapshot = quote.catalog_snapshot
     ? structuredClone(quote.catalog_snapshot)
     : null;
-  state.items = structuredClone(quote.items);
+  state.items = structuredClone(Array.isArray(quote.items) ? quote.items : []);
   $("quoteIdLabel").textContent = quote.quote_id;
   $("quoteDate").textContent = new Date(quote.created_at).toLocaleDateString("es-CL");
-  $("workerName").value = quote.worker.name || "";
-  $("workerPhone").value = quote.worker.phone || "";
-  $("clientName").value = quote.client.name || "";
-  $("workLocation").value = quote.client.location || "";
-  $("workDescription").value = quote.work_description || "";
-  $("laborCost").value = quote.costs.labor || 0;
-  $("transportCost").value = quote.costs.transport || 0;
+  $("workerName").value = quote.worker?.name || "";
+  $("workerPhone").value = quote.worker?.phone || "";
+  $("clientToken").value = quote.client_token || makeClientToken();
+  $("workType").value = quote.work_type || (quote.work_description ? "Otro" : "");
+  $("workDetails").value = quote.work_details ?? quote.work_description ?? "";
+  $("laborCost").value = quote.costs?.labor || 0;
+  $("transportCost").value = quote.costs?.transport || 0;
+  validateClientTokenField();
+  updateWorkDetailsRequirement();
   renderItems();
   renderSourceSummary();
   window.scrollTo({ top: 0, behavior: "smooth" });
@@ -432,16 +587,19 @@ function newQuote() {
   state.items = [];
   $("quoteIdLabel").textContent = "Nueva cotización";
   $("quoteDate").textContent = new Date().toLocaleDateString("es-CL");
-  $("clientName").value = "";
-  $("workLocation").value = "";
-  $("workDescription").value = "";
+  $("clientToken").value = makeClientToken();
+  $("workType").value = "";
+  $("workDetails").value = "";
   $("laborCost").value = "0";
   $("transportCost").value = "0";
   renderItems();
   renderSourceSummary();
+  validateClientTokenField();
+  updateWorkDetailsRequirement();
 }
 
 function exportBackup() {
+  sanitizeStoredQuotes();
   const backup = {
     format: "app-cotizacion-backup",
     version: 1,
@@ -457,7 +615,7 @@ function exportBackup() {
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
-  link.download = `app-cotizacion-respaldo-${new Date().toISOString().slice(0, 10)}.json`;
+  link.download = `clinica-hogar-respaldo-${new Date().toISOString().slice(0, 10)}.json`;
   link.click();
   URL.revokeObjectURL(url);
 }
@@ -471,7 +629,8 @@ async function importBackup(file) {
 
     if (!confirm(`Se importarán ${backup.quotes.length} cotizaciones. ¿Continuar?`)) return;
 
-    localStorage.setItem(STORAGE.quotes, JSON.stringify(backup.quotes));
+    const sanitized = sanitizeQuotes(backup.quotes);
+    localStorage.setItem(STORAGE.quotes, JSON.stringify(sanitized.quotes));
     if (backup.profile) {
       localStorage.setItem(STORAGE.profile, JSON.stringify(backup.profile));
       loadProfile();
@@ -505,6 +664,13 @@ function formatQuantity(value) {
   }).format(value);
 }
 
+function formatStoredDate(value) {
+  const date = new Date(value);
+  return Number.isNaN(date.getTime())
+    ? "Fecha no disponible"
+    : date.toLocaleString("es-CL");
+}
+
 function escapeHtml(value) {
   return String(value ?? "")
     .replaceAll("&", "&amp;")
@@ -522,8 +688,28 @@ function registerEvents() {
   $("addCatalogProduct").addEventListener("click", addCatalogItem);
   $("addManualProduct").addEventListener("click", addManualItem);
   $("saveQuote").addEventListener("click", saveQuote);
-  $("printQuote").addEventListener("click", () => window.print());
+  $("printQuote").addEventListener("click", () => {
+    updatePrintSummary();
+    window.print();
+  });
   $("newQuote").addEventListener("click", newQuote);
+  $("generateClientToken").addEventListener("click", () => {
+    $("clientToken").value = makeClientToken();
+    validateClientTokenField();
+  });
+  $("clientToken").addEventListener("input", (event) => {
+    event.target.value = normalizeClientToken(event.target.value);
+    event.target.setCustomValidity("");
+    event.target.setAttribute("aria-invalid", "false");
+    updatePrintSummary();
+  });
+  $("clientToken").addEventListener("blur", validateClientTokenField);
+  $("workType").addEventListener("change", () => {
+    $("workType").setCustomValidity("");
+    $("workType").setAttribute("aria-invalid", "false");
+    updateWorkDetailsRequirement();
+  });
+  $("workDetails").addEventListener("input", updateWorkDetailsRequirement);
   $("updateCatalog").addEventListener("click", () => fetchCatalog(true));
   $("exportBackup").addEventListener("click", exportBackup);
   $("importBackup").addEventListener("change", (event) => {
@@ -553,9 +739,10 @@ function registerEvents() {
 
 async function initialize() {
   $("quoteDate").textContent = new Date().toLocaleDateString("es-CL");
+  sanitizeStoredQuotes();
   loadProfile();
   registerEvents();
-  renderItems();
+  newQuote();
   renderHistory();
   await fetchCatalog();
 
