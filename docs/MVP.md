@@ -65,10 +65,15 @@
 - identificador
 - fecha
 - maestro
-- cliente
-- trabajo
+- token anónimo de cliente
+- tipo de trabajo
+- descripción adicional
 - materiales congelados
 - mano de obra
 - transporte
 - total
 - fuente y versión del catálogo
+
+## Privacidad de cotizaciones históricas
+
+Al iniciar, la aplicación sanea una sola vez cada estructura que lo necesite en el almacenamiento local: elimina `client.name` y `client.location`, genera `client_token` cuando falta y persiste el resultado. La operación es idempotente y no modifica identificadores, precios, materiales, snapshots ni totales.
