@@ -51,16 +51,28 @@ http://localhost:8080
 
 ## Publicar en GitHub Pages
 
-1. Subir los archivos a la rama `main`.
+1. Mantener los archivos de la aplicación en la rama `main`.
 2. Abrir **Settings → Pages**.
-3. Seleccionar **Deploy from a branch**.
-4. Elegir `main` y la carpeta `/root`.
-5. Guardar.
+3. En **Build and deployment**, seleccionar **Deploy from a branch**.
+4. Elegir la rama `main` y la carpeta `/(root)`.
+5. Guardar y esperar el primer despliegue.
+
+Antes de habilitar Pages se recomienda ejecutar el Prompt 1 de `docs/CODEX_PROMPTS.md`, que verifica rutas relativas, alcance de la PWA y agrega `.nojekyll`.
+
+## Desarrollo con Codex
+
+- Contexto y decisiones vigentes: [`docs/CODEX_HANDOFF.md`](docs/CODEX_HANDOFF.md)
+- Prompts por milestone: [`docs/CODEX_PROMPTS.md`](docs/CODEX_PROMPTS.md)
+- Flujo local de ramas y pruebas: [`docs/WORKFLOW_CODEX.md`](docs/WORKFLOW_CODEX.md)
+- Restricciones obligatorias del agente: [`AGENTS.md`](AGENTS.md)
+
+Las decisiones de producto y arquitectura se realizan fuera de Codex. Codex implementa tareas técnicas pequeñas, prueba los cambios y entrega ramas o pull requests revisables.
 
 ## Próximas etapas
 
-1. Sustituir el catálogo demostrativo por datos autorizados de Ferretería Cerda.
-2. Crear un extractor separado.
-3. Publicar versiones del catálogo con hash SHA-256.
-4. Agregar actualización automática mediante GitHub Actions.
-5. Evaluar DOI para releases estables del conjunto de datos.
+1. Preparar y probar el despliegue en GitHub Pages.
+2. Completar el smoke test funcional desde un teléfono.
+3. Sustituir el catálogo demostrativo por datos autorizados de Ferretería Cerda.
+4. Crear un extractor separado.
+5. Publicar versiones del catálogo con hash SHA-256.
+6. Evaluar DOI para releases estables del conjunto de datos.
